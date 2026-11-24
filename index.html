@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paca — M5Stack StickS3 Web Flasher</title>
+  <!-- ESP Web Tools provides one-click WebSerial flashing in Chrome & Edge -->
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <style>
+    :root {
+      --bg-top: #26163b;
+      --bg-bot: #42265e;
+      --card-bg: rgba(45, 27, 68, 0.88);
+      --card-border: #8d6bb5;
+      --lavender: #cdb4e8;
+      --cream: #fff8e7;
+      --cream-dim: #d8cee0;
+      --grass: #5fd37a;
+      --accent: #b585f0;
+      --accent-hover: #c9a0ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--cream);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 75%, #2f5c3a 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: var(--card-bg);
+      border: 1.5px solid var(--card-border);
+      border-radius: 20px;
+      padding: 32px 28px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #201233;
+      background: var(--lavender);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .subtitle {
+      color: var(--cream-dim);
+      font-size: 0.96rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .steps {
+      background: rgba(24, 13, 40, 0.55);
+      border: 1px solid rgba(205, 180, 232, 0.25);
+      border-radius: 14px;
+      padding: 16px 18px;
+      margin-bottom: 24px;
+    }
+
+    .steps h2 {
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--lavender);
+      margin-bottom: 10px;
+    }
+
+    .steps ol {
+      padding-left: 20px;
+      display: grid;
+      gap: 8px;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      color: var(--cream-dim);
+    }
+
+    .steps strong {
+      color: var(--cream);
+    }
+
+    .flash-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    esp-web-install-button {
+      --esp-tools-button-color: var(--accent);
+      --esp-tools-button-text-color: #1c0f2e;
+    }
+
+    .btn-primary {
+      appearance: none;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1c0f2e;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .download-link {
+      font-size: 0.88rem;
+      color: var(--lavender);
+      text-decoration: none;
+      border-bottom: 1px dashed rgba(205, 180, 232, 0.5);
+      padding-bottom: 2px;
+    }
+
+    .download-link:hover {
+      color: var(--cream);
+    }
+
+    .unsupported {
+      text-align: center;
+      font-size: 0.88rem;
+      color: #ffb4b4;
+      background: rgba(180, 40, 60, 0.2);
+      border: 1px solid rgba(255, 140, 150, 0.35);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+
+    footer {
+      border-top: 1px solid rgba(205, 180, 232, 0.2);
+      padding-top: 14px;
+      font-size: 0.8rem;
+      color: var(--cream-dim);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    footer a {
+      color: var(--lavender);
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="badge">M5Stack StickS3 · ESP32-S3</span>
+    <h1>PACA</h1>
+    <p class="subtitle">
+      Cozy purple alpaca virtual pet. Flash the ready-to-go firmware straight from Chrome or Edge — no Arduino IDE required.
+    </p>
+
+    <section class="steps">
+      <h2>Before You Flash</h2>
+      <ol>
+        <li>Plug your <strong>M5Stack StickS3</strong> into your computer with a <strong>USB-C data cable</strong>.</li>
+        <li>Enter <strong>Download Mode</strong>: press and hold the power button until the internal <strong>green LED blinks</strong>, then release.</li>
+        <li>Click <strong>Install Paca</strong> below, select the StickS3 serial port, and wait ~30 seconds for flashing to finish.</li>
+      </ol>
+    </section>
+
+    <div class="flash-zone">
+      <esp-web-install-button manifest="./manifest.json">
+        <button slot="activate" class="btn-primary">Install Paca to StickS3</button>
+        <div slot="unsupported" class="unsupported">
+          WebSerial is not supported in this browser. Please open this page in desktop <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.
+        </div>
+        <div slot="not-allowed" class="unsupported">
+          WebSerial requires HTTPS (or localhost). Open this flasher from your GitHub Pages URL.
+        </div>
+      </esp-web-install-button>
+
+      <a class="download-link" href="./paca-sticks3-merged.bin" download>
+        Or download paca-sticks3-merged.bin (flash at 0x0)
+      </a>
+    </div>
+
+    <footer>
+      Paca, a remix of <a href="https://github.com/msm187/StickPet" target="_blank" rel="noopener">StickPet</a> by deflockohio · GPL-3.0-or-later
+    </footer>
+  </main>
+</body>
+</html>

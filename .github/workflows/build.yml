@@ -1,7 +1,9 @@
 {
 "name": "Build Paca Firmware & Web Flasher",
 "on": {
-"push": { "branches": ["main", "master"] },
+"push": {
+"branches": ["main", "master"]
+},
 "workflow_dispatch": {}
 },
 "permissions": {
@@ -24,7 +26,9 @@
 {
 "name": "Set up Python",
 "uses": "actions/setup-python@v5",
-"with": { "python-version": "3.11" }
+"with": {
+"python-version": "3.11"
+}
 },
 {
 "name": "Install Pillow and esptool",
@@ -69,7 +73,9 @@
 {
 ￼
 ￼
+"with": {
 ￼
+}
 }
 ￼
 },

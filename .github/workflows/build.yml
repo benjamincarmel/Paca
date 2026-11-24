@@ -1,4 +1,4 @@
-name: Build Paca Firmware & Web Flasher
+name:  Build Paca Firmware & Web Flasher
 on:
 push:
 branches: [ main, master ]

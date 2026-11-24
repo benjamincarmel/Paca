@@ -27,16 +27,17 @@ run: |
 python3 - <<'EOF'
 from pathlib import Path
 import shutil
+FENCE = chr(96) * 3
 def copy_clean(src: Path, dst: Path) -> None:
 lines = src.read_text(encoding="utf-8").splitlines()
-# Strip accidental markdown fences if copied from a code viewer
-if lines and lines[0].strip().startswith("⁠"): lines = lines[1:] if lines and lines[-1].strip() == "⁠":
+if lines and lines[0].strip().startswith(FENCE):
+lines = lines[1:]
+if lines and lines[-1].strip() == FENCE:
 lines = lines[:-1]
 dst.parent.mkdir(parents=True, exist_ok=True)
 dst.write_text("\n".join(lines) + "\n", encoding="utf-8")
 sketch_dir = Path("build_sketch/paca")
 sketch_dir.mkdir(parents=True, exist_ok=True)
-# Support files placed either at repo root or inside paca/
 ino_src = Path("paca/paca.ino") if Path("paca/paca.ino").exists() else Path("paca.ino")
 copy_clean(ino_src, sketch_dir / "paca.ino")
 spr_src = Path("paca/sprites.h") if Path("paca/sprites.h").exists() else Path("sprites.h")
@@ -48,6 +49,8 @@ copy_clean(py_src, Path("build_sketch/make_sprites.py"))
 png_src = Path("paca/Paca.png") if Path("paca/Paca.png").exists() else Path("Paca.png")
 if png_src.exists():
 shutil.copy2(png_src, Path("build_sketch/Paca.png"))
+if Path("index.html").exists():
+copy_clean(Path("index.html"), Path("build_sketch/index.html"))
 EOF
 - name: Generate sprites.h from Paca.png (if present)
 run: |
@@ -96,8 +99,8 @@ path: out/paca-sticks3-merged.bin
 run: |
 mkdir -p site
 cp out/paca-sticks3-merged.bin site/paca-sticks3-merged.bin
-if [ -f index.html ]; then
-cp index.html site/index.html
+if [ -f build_sketch/index.html ]; then
+cp build_sketch/index.html site/index.html
 fi
 cat <<'EOF' > site/manifest.json
 {

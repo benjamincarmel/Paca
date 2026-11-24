@@ -32,27 +32,27 @@
 },
 {
 "name": "Stage sketch folder and sanitize files",
-"run": "python3 - <<'EOF'\nfrom pathlib import Path\nimport shutil\nFENCE = chr(96) * 3\ndef copy_clean(src, dst):\n    lines = src.read_text(encoding='utf-8').splitlines()\n    if lines and lines[0].strip().startswith(FENCE):\n        lines = lines[1:]\n    if lines and lines[-1].strip() == FENCE:\n        lines = lines[:-1]\n    dst.parent.mkdir(parents=True, exist_ok=True)\n    dst.write_text('\n'.join(lines) + '\n', encoding='utf-8')\nsketch_dir = Path('build_sketch/paca')\nsketch_dir.mkdir(parents=True, exist_ok=True)\nino_src = Path('paca/paca.ino') if Path('paca/paca.ino').exists() else Path('paca.ino')\ncopy_clean(ino_src, sketch_dir / 'paca.ino')\nspr_src = Path('paca/sprites.h') if Path('paca/sprites.h').exists() else Path('sprites.h')\nif spr_src.exists():\n    copy_clean(spr_src, sketch_dir / 'sprites.h')\npy_src = Path('paca/make_sprites.py') if Path('paca/make_sprites.py').exists() else Path('make_sprites.py')\nif py_src.exists():\n    copy_clean(py_src, Path('build_sketch/make_sprites.py'))\npng_src = Path('paca/Paca.png') if Path('paca/Paca.png').exists() else Path('Paca.png')\nif png_src.exists():\n    shutil.copy2(png_src, Path('build_sketch/Paca.png'))\nif Path('index.html').exists():\n    copy_clean(Path('index.html'), Path('build_sketch/index.html'))\nEOF"
+"run": "mkdir -p build/paca && cp ([ -f paca/paca.ino ] && echo paca/paca.ino || echo paca.ino) build/paca/paca.ino && ([ ! -f sprites.h ] || cp sprites.h build/paca/sprites.h) && ([ ! -f paca/sprites.h ] || cp paca/sprites.h build/paca/sprites.h) && ([ ! -f make_sprites.py ] || cp make_sprites.py build/make_sprites.py) && ([ ! -f paca/make_sprites.py ] || cp paca/make_sprites.py build/make_sprites.py) && ([ ! -f Paca.png ] || cp Paca.png build/Paca.png) && ([ ! -f paca/Paca.png ] || cp paca/Paca.png build/Paca.png) && ([ ! -f index.html ] || cp index.html build/index.html) && python3 -c 'import pathlib,sys; [p.write_text(chr(10).join(l for l in p.read_text().splitlines() if not l.strip().startswith(chr(96)*3))+chr(10)) for p in map(pathlib.Path,sys.argv[1:]) if p.exists()]' build/paca/paca.ino build/paca/sprites.h build/make_sprites.py build/index.html"
 },
 {
-"name": "Generate sprites.h from Paca.png",
-"run": "if [ -f build_sketch/Paca.png ] && [ -f build_sketch/make_sprites.py ]; then python3 build_sketch/make_sprites.py -i build_sketch/Paca.png -o build_sketch/paca/sprites.h; else echo 'Using existing sprites.h'; fi"
+￼
+￼
 },
 {
-"name": "Install Arduino CLI",
-"uses": "arduino/setup-arduino-cli@v2"
+￼
+￼
 },
 {
-"name": "Install ESP32 core and M5Stack libraries",
-"run": "arduino-cli config init --overwrite\narduino-cli config set board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json\narduino-cli core update-index\narduino-cli core install esp32:esp32\narduino-cli lib install M5Unified M5PM1"
+￼
+￼
 },
 {
-"name": "Compile Paca for M5Stack StickS3",
-"run": "mkdir -p out\narduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB --output-dir out build_sketch/paca"
+￼
+￼
 },
 {
-"name": "Create merged 0x0 flash binary",
-"run": "if [ -f out/paca.ino.merged.bin ]; then cp out/paca.ino.merged.bin out/paca-sticks3-merged.bin; else BOOT_APP0=$(find ~/.arduino15 -name boot_app0.bin | head -n 1); python3 -m esptool --chip esp32s3 merge_bin -o out/paca-sticks3-merged.bin --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 out/paca.ino.bootloader.bin 0x8000 out/paca.ino.partitions.bin 0xe000 "BOOT_APP0\" 0x10000 out/paca.ino.bin; fi\nls -lh out/paca-sticks3-merged.bin"
+￼
+￼(find ~/.arduino15 -name boot_app0.bin \vert{} head -n 1); python3 -m esptool --chip esp32s3 merge_bin -o out/paca-sticks3-merged.bin --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 out/paca.ino.bootloader.bin 0x8000 out/paca.ino.partitions.bin 0xe000￼
 },
 {
 ￼
@@ -64,7 +64,7 @@
 },
 {
 ￼
-"run": "mkdir -p site\ncp out/paca-sticks3-merged.bin site/paca-sticks3-merged.bin\nif [ -f build_sketch/index.html ]; then cp build_sketch/index.html site/index.html; fi\nprintf '%s\\n' '{\"name\":\"Paca for M5Stack StickS3\",\"version\":\"1.0.0\",\"new_install_prompt_erase\":true,\"builds\":[{\"chipFamily\":\"ESP32-S3\",\"parts\":[{\"path\":\"paca-sticks3-merged.bin\",\"offset\":0}]}]}' > site/manifest.json"
+"run": "mkdir -p site && cp out/paca-sticks3-merged.bin site/paca-sticks3-merged.bin && ([ ! -f build/index.html ] || cp build/index.html site/index.html) && python3 -c 'import json,pathlib,sys; pathlib.Path(sys.argv[1]).write_text(json.dumps(dict(name=sys.argv[2],version=sys.argv[3],new_install_prompt_erase=True,builds=[dict(chipFamily=sys.argv[4],parts=[dict(path=sys.argv[5],offset=0)])])))' site/manifest.json 'Paca for M5Stack StickS3' 1.0.0 ESP32-S3 paca-sticks3-merged.bin"
 },
 {
 ￼
@@ -78,7 +78,7 @@
 ￼
 "environment": {
 ￼
-"url": "{{ steps.deployment.outputs.page_url }}"
+￼{{ steps.deployment.outputs.page_url }}"
 },
 "steps": [
 {

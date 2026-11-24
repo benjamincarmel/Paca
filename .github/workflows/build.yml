@@ -1,136 +1,92 @@
-name:  Build Paca Firmware & Web Flasher
-on:
-push:
-branches: [ main, master ]
-workflow_dispatch:
-permissions:
-contents: read
-pages: write
-id-token: write
-concurrency:
-group: "pages"
-cancel-in-progress: false
-jobs:
-build:
-runs-on: ubuntu-latest
-steps:
-- name: Checkout repository
-uses: actions/checkout@v4
-- name: Set up Python
-uses: actions/setup-python@v5
-with:
-python-version: "3.11"
-- name: Install Pillow & esptool
-run: python3 -m pip install --upgrade pillow esptool
-- name: Stage sketch folder & sanitize files
-run: |
-python3 - <<'EOF'
-from pathlib import Path
-import shutil
-FENCE = chr(96) * 3
-def copy_clean(src: Path, dst: Path) -> None:
-lines = src.read_text(encoding="utf-8").splitlines()
-if lines and lines[0].strip().startswith(FENCE):
-lines = lines[1:]
-if lines and lines[-1].strip() == FENCE:
-lines = lines[:-1]
-dst.parent.mkdir(parents=True, exist_ok=True)
-dst.write_text("\n".join(lines) + "\n", encoding="utf-8")
-sketch_dir = Path("build_sketch/paca")
-sketch_dir.mkdir(parents=True, exist_ok=True)
-ino_src = Path("paca/paca.ino") if Path("paca/paca.ino").exists() else Path("paca.ino")
-copy_clean(ino_src, sketch_dir / "paca.ino")
-spr_src = Path("paca/sprites.h") if Path("paca/sprites.h").exists() else Path("sprites.h")
-if spr_src.exists():
-copy_clean(spr_src, sketch_dir / "sprites.h")
-py_src = Path("paca/make_sprites.py") if Path("paca/make_sprites.py").exists() else Path("make_sprites.py")
-if py_src.exists():
-copy_clean(py_src, Path("build_sketch/make_sprites.py"))
-png_src = Path("paca/Paca.png") if Path("paca/Paca.png").exists() else Path("Paca.png")
-if png_src.exists():
-shutil.copy2(png_src, Path("build_sketch/Paca.png"))
-if Path("index.html").exists():
-copy_clean(Path("index.html"), Path("build_sketch/index.html"))
-EOF
-- name: Generate sprites.h from Paca.png (if present)
-run: |
-if [ -f build_sketch/Paca.png ] && [ -f build_sketch/make_sprites.py ]; then
-python3 build_sketch/make_sprites.py -i build_sketch/Paca.png -o build_sketch/paca/sprites.h
-else
-echo "Using existing sprites.h (Paca.png or make_sprites.py not found)."
-fi
-- name: Install Arduino CLI
-uses: arduino/setup-arduino-cli@v2
-- name: Install ESP32 core & M5Stack libraries
-run: |
-arduino-cli config init --overwrite
-arduino-cli config set board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
-arduino-cli core update-index
-arduino-cli core install esp32:esp32
-arduino-cli lib install "M5Unified" "M5PM1"
-- name: Compile Paca for M5Stack StickS3
-run: |
-mkdir -p out
-arduino-cli compile 
---fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB" 
---output-dir out 
-build_sketch/paca
-- name: Create merged 0x0 flash binary
-run: |
-if [ -f out/paca.ino.merged.bin ]; then
-cp out/paca.ino.merged.bin out/paca-sticks3-merged.bin
-else
-BOOT_APP0=$(find ~/.arduino15 -name "boot_app0.bin" | head -n 1)
-python3 -m esptool --chip esp32s3 merge_bin 
--o out/paca-sticks3-merged.bin 
---flash_mode dio --flash_freq 80m --flash_size 8MB 
-0x0 out/paca.ino.bootloader.bin 
-0x8000 out/paca.ino.partitions.bin 
-0xe000 "$BOOT_APP0" 
-0x10000 out/paca.ino.bin
-fi
-ls -lh out/paca-sticks3-merged.bin
-- name: Upload downloadable .bin artifact
-uses: actions/upload-artifact@v4
-with:
-name: paca-sticks3-firmware
-path: out/paca-sticks3-merged.bin
-- name: Assemble ESP Web Tools flasher site
-run: |
-mkdir -p site
-cp out/paca-sticks3-merged.bin site/paca-sticks3-merged.bin
-if [ -f build_sketch/index.html ]; then
-cp build_sketch/index.html site/index.html
-fi
-cat <<'EOF' > site/manifest.json
 {
-"name": "Paca for M5Stack StickS3",
-"version": "1.0.0",
-"new_install_prompt_erase": true,
-"builds": [
+"name": "Build Paca Firmware & Web Flasher",
+"on": {
+"push": { "branches": ["main", "master"] },
+"workflow_dispatch": {}
+},
+"permissions": {
+"contents": "read",
+"pages": "write",
+"id-token": "write"
+},
+"concurrency": {
+"group": "pages",
+"cancel-in-progress": false
+},
+"jobs": {
+"build": {
+"runs-on": "ubuntu-latest",
+"steps": [
 {
-"chipFamily": "ESP32-S3",
-"parts": [
+"name": "Checkout repository",
+"uses": "actions/checkout@v4"
+},
 {
-"path": "paca-sticks3-merged.bin",
-"offset": 0
+"name": "Set up Python",
+"uses": "actions/setup-python@v5",
+"with": { "python-version": "3.11" }
+},
+{
+"name": "Install Pillow and esptool",
+"run": "python3 -m pip install --upgrade pillow esptool"
+},
+{
+"name": "Stage sketch folder and sanitize files",
+"run": "python3 - <<'EOF'\nfrom pathlib import Path\nimport shutil\nFENCE = chr(96) * 3\ndef copy_clean(src, dst):\n    lines = src.read_text(encoding='utf-8').splitlines()\n    if lines and lines[0].strip().startswith(FENCE):\n        lines = lines[1:]\n    if lines and lines[-1].strip() == FENCE:\n        lines = lines[:-1]\n    dst.parent.mkdir(parents=True, exist_ok=True)\n    dst.write_text('\n'.join(lines) + '\n', encoding='utf-8')\nsketch_dir = Path('build_sketch/paca')\nsketch_dir.mkdir(parents=True, exist_ok=True)\nino_src = Path('paca/paca.ino') if Path('paca/paca.ino').exists() else Path('paca.ino')\ncopy_clean(ino_src, sketch_dir / 'paca.ino')\nspr_src = Path('paca/sprites.h') if Path('paca/sprites.h').exists() else Path('sprites.h')\nif spr_src.exists():\n    copy_clean(spr_src, sketch_dir / 'sprites.h')\npy_src = Path('paca/make_sprites.py') if Path('paca/make_sprites.py').exists() else Path('make_sprites.py')\nif py_src.exists():\n    copy_clean(py_src, Path('build_sketch/make_sprites.py'))\npng_src = Path('paca/Paca.png') if Path('paca/Paca.png').exists() else Path('Paca.png')\nif png_src.exists():\n    shutil.copy2(png_src, Path('build_sketch/Paca.png'))\nif Path('index.html').exists():\n    copy_clean(Path('index.html'), Path('build_sketch/index.html'))\nEOF"
+},
+{
+"name": "Generate sprites.h from Paca.png",
+"run": "if [ -f build_sketch/Paca.png ] && [ -f build_sketch/make_sprites.py ]; then python3 build_sketch/make_sprites.py -i build_sketch/Paca.png -o build_sketch/paca/sprites.h; else echo 'Using existing sprites.h'; fi"
+},
+{
+"name": "Install Arduino CLI",
+"uses": "arduino/setup-arduino-cli@v2"
+},
+{
+"name": "Install ESP32 core and M5Stack libraries",
+"run": "arduino-cli config init --overwrite\narduino-cli config set board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json\narduino-cli core update-index\narduino-cli core install esp32:esp32\narduino-cli lib install M5Unified M5PM1"
+},
+{
+"name": "Compile Paca for M5Stack StickS3",
+"run": "mkdir -p out\narduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=8M,PSRAM=opi,PartitionScheme=default_8MB --output-dir out build_sketch/paca"
+},
+{
+"name": "Create merged 0x0 flash binary",
+"run": "if [ -f out/paca.ino.merged.bin ]; then cp out/paca.ino.merged.bin out/paca-sticks3-merged.bin; else BOOT_APP0=$(find ~/.arduino15 -name boot_app0.bin | head -n 1); python3 -m esptool --chip esp32s3 merge_bin -o out/paca-sticks3-merged.bin --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 out/paca.ino.bootloader.bin 0x8000 out/paca.ino.partitions.bin 0xe000 "BOOT_APP0\" 0x10000 out/paca.ino.bin; fi\nls -lh out/paca-sticks3-merged.bin"
+},
+{
+￼
+￼
+"with": {
+￼
+￼
+}
+},
+{
+￼
+"run": "mkdir -p site\ncp out/paca-sticks3-merged.bin site/paca-sticks3-merged.bin\nif [ -f build_sketch/index.html ]; then cp build_sketch/index.html site/index.html; fi\nprintf '%s\\n' '{\"name\":\"Paca for M5Stack StickS3\",\"version\":\"1.0.0\",\"new_install_prompt_erase\":true,\"builds\":[{\"chipFamily\":\"ESP32-S3\",\"parts\":[{\"path\":\"paca-sticks3-merged.bin\",\"offset\":0}]}]}' > site/manifest.json"
+},
+{
+￼
+￼
+￼
+}
+￼
+},
+"deploy": {
+￼
+￼
+"environment": {
+￼
+"url": "{{ steps.deployment.outputs.page_url }}"
+},
+"steps": [
+{
+"name": "Deploy web flasher to GitHub Pages",
+"id": "deployment",
+"uses": "actions/deploy-pages@v4"
 }
 ]
 }
-]
 }
-EOF
-- name: Upload GitHub Pages artifact
-uses: actions/upload-pages-artifact@v3
-with:
-path: site
-deploy:
-needs: build
-runs-on: ubuntu-latest
-environment:
-name: github-pages
-url: ${{ steps.deployment.outputs.page_url }}
-steps:
-- name: Deploy web flasher to GitHub Pages
-id: deployment
-uses: actions/deploy-pages@v4
+}

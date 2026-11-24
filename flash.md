@@ -1,0 +1,6 @@
+// ... existing code ...
+Converting ⁠Paca.png⁠ Into ⁠sprites.h⁠
+⁠sprites.h⁠ ships with built-in pixel-art starter sprites matching ⁠Paca.png⁠ so ⁠paca.ino⁠ compiles immediately. To embed the exact pixel art from your ⁠Paca.png⁠ tileset:
+⁠make_sprites.py⁠ preserves native PNG transparency automatically (and falls back to border flood-fill if you pass an opaque JPEG), detects all 6 expressions (⁠WAVE⁠, ⁠CONTENT⁠, ⁠STARS⁠, ⁠SLEEPY⁠, ⁠WORRIED⁠, ⁠NEUTRAL⁠) while keeping detached icons (⁠heart⁠, ⁠zZ⁠, sweat drop, ⁠!⁠) attached to their frame, aligns all 6 poses to a shared baseline, scales with crisp nearest-neighbor (⁠--resample nearest⁠), and writes ⁠sprites.h⁠ (⁠64x80⁠ RGB565 ⁠PROGMEM⁠ arrays with magenta ⁠0xF81F⁠ transparency).
+Place the generated ⁠sprites.h⁠ in the same folder as ⁠paca.ino⁠ and flash.
+// ... existing code ...
